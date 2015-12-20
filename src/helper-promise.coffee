@@ -15,11 +15,21 @@ if window?
   # are already using a library.
   #
   # Try in the following order:
+  # - native Promise or a polyfill
   # - Q Promise
   # - angularjs Promise
   # - jQuery Promise
-  # - native Promise or a polyfill
-  if window.Q
+  if window.Promise
+    newPromise = (fn) => return new window.Promise (resolve, reject) ->
+      # Some browsers (like node-webkit 0.8.6) contain an older implementation
+      # of Promises that provide 1 argument (a `PromiseResolver`).
+      if resolve.fulfill
+        fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve))
+      else
+        fn(arguments...)
+
+    allPromises = (promises) => window.Promise.all(promises)
+  else if window.Q
     newPromise = (fn) =>
       deferred = window.Q.defer()
       resolve = (val) -> deferred.resolve(val)
@@ -55,16 +65,6 @@ if window?
       #
       # So, convert the array of promises to args and then the resolved args to an array
       return window.jQuery.when(promises...).then((promises...) -> return promises)
-  else if window.Promise
-    newPromise = (fn) => return new window.Promise (resolve, reject) ->
-      # Some browsers (like node-webkit 0.8.6) contain an older implementation
-      # of Promises that provide 1 argument (a `PromiseResolver`).
-      if resolve.fulfill
-        fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve))
-      else
-        fn(arguments...)
-
-    allPromises = (promises) => window.Promise.all(promises)
 
   else
     # Otherwise, show a warning (library can still be used with just callbacks)
