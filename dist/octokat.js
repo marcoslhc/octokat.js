@@ -301,7 +301,24 @@ var Promise, allPromises, injector, newPromise, ref, req, toPromise,
   slice = [].slice;
 
 if (typeof window !== "undefined" && window !== null) {
-  if (window.Q) {
+  if (window.Promise) {
+    newPromise = (function(_this) {
+      return function(fn) {
+        return new window.Promise(function(resolve, reject) {
+          if (resolve.fulfill) {
+            return fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve));
+          } else {
+            return fn.apply(null, arguments);
+          }
+        });
+      };
+    })(this);
+    allPromises = (function(_this) {
+      return function(promises) {
+        return window.Promise.all(promises);
+      };
+    })(this);
+  } else if (window.Q) {
     newPromise = (function(_this) {
       return function(fn) {
         var deferred, reject, resolve;
@@ -363,23 +380,6 @@ if (typeof window !== "undefined" && window !== null) {
           promises = 1 <= arguments.length ? slice.call(arguments, 0) : [];
           return promises;
         });
-      };
-    })(this);
-  } else if (window.Promise) {
-    newPromise = (function(_this) {
-      return function(fn) {
-        return new window.Promise(function(resolve, reject) {
-          if (resolve.fulfill) {
-            return fn(resolve.resolve.bind(resolve), resolve.reject.bind(resolve));
-          } else {
-            return fn.apply(null, arguments);
-          }
-        });
-      };
-    })(this);
-    allPromises = (function(_this) {
-      return function(promises) {
-        return window.Promise.all(promises);
       };
     })(this);
   } else {
